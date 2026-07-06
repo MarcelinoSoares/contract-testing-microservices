@@ -234,7 +234,7 @@ Contract testing does not replace all E2E tests; it reduces integration risk ear
 
 ## Author
 
-**Marcelino Soares**
+**Marcelino Soares**  
 Senior SDET / Quality Engineer · Contract Testing · Microservices · Test Automation · CI/CD
 
 - [LinkedIn](https://www.linkedin.com/in/marcelinosoares)
