@@ -1,21 +1,25 @@
 package com.marcelino.userservice.pact;
 
 import au.com.dius.pact.consumer.MockServer;
+import au.com.dius.pact.consumer.dsl.LambdaDsl;
 import au.com.dius.pact.consumer.dsl.PactDslJsonBody;
 import au.com.dius.pact.consumer.dsl.PactDslWithProvider;
 import au.com.dius.pact.consumer.junit5.PactConsumerTestExt;
 import au.com.dius.pact.consumer.junit5.PactTestFor;
+import au.com.dius.pact.core.model.PactSpecVersion;
 import au.com.dius.pact.core.model.RequestResponsePact;
 import au.com.dius.pact.core.model.annotations.Pact;
 import com.marcelino.userservice.client.OrderClient;
 import com.marcelino.userservice.model.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Consumer Pact Test - Define e verifica os contratos que o user-service
@@ -24,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Este teste GERA os arquivos .json de contrato em target/pacts/
  */
 @ExtendWith(PactConsumerTestExt.class)
-@PactTestFor(providerName = "order-service")
+@PactTestFor(providerName = "order-service", pactVersion = PactSpecVersion.V3)
 public class OrderConsumerPactTest {
 
     // =========================================================
@@ -64,6 +68,55 @@ public class OrderConsumerPactTest {
     }
 
     @Pact(consumer = "user-service", provider = "order-service")
+    public RequestResponsePact getAllOrdersPact(PactDslWithProvider builder) {
+        return builder
+            .given("orders exist")
+            .uponReceiving("a request for all orders")
+                .path("/orders")
+                .method("GET")
+            .willRespondWith()
+                .status(200)
+                .body(LambdaDsl.newJsonArrayMinLike(1, array ->
+                    array.object(obj -> {
+                        obj.numberType("id");
+                        obj.numberType("userId");
+                        obj.stringType("product");
+                        obj.numberType("quantity");
+                        obj.decimalType("totalPrice");
+                        obj.stringType("status");
+                    })
+                ).build())
+            .toPact();
+    }
+
+    @Pact(consumer = "user-service", provider = "order-service")
+    public RequestResponsePact createOrderPact(PactDslWithProvider builder) {
+        return builder
+            .given("order service is available")
+            .uponReceiving("a request to create an order")
+                .path("/orders")
+                .method("POST")
+                .matchHeader("Content-Type", "application/json.*", "application/json")
+                .body(new PactDslJsonBody()
+                    .numberType("userId", 1L)
+                    .stringType("product", "Laptop")
+                    .numberType("quantity", 1)
+                    .decimalType("totalPrice", 2500.00)
+                )
+            .willRespondWith()
+                .status(201)
+                .body(new PactDslJsonBody()
+                    .numberType("id", 4L)
+                    .numberType("userId", 1L)
+                    .stringType("product", "Laptop")
+                    .numberType("quantity", 1)
+                    .decimalType("totalPrice", 2500.00)
+                    .stringType("status", "PENDING")
+                )
+            .toPact();
+    }
+
+    @Pact(consumer = "user-service", provider = "order-service")
     public RequestResponsePact getOrdersByUserIdPact(PactDslWithProvider builder) {
         return builder
             .given("orders exist for user 1")
@@ -72,16 +125,16 @@ public class OrderConsumerPactTest {
                 .method("GET")
             .willRespondWith()
                 .status(200)
-                .body(new au.com.dius.pact.consumer.dsl.PactDslJsonArray()
-                    .object()
-                        .numberType("id")
-                        .numberType("userId", 1L)
-                        .stringType("product")
-                        .numberType("quantity")
-                        .decimalType("totalPrice")
-                        .stringType("status")
-                    .closeObject()
-                )
+                .body(LambdaDsl.newJsonArrayMinLike(1, array ->
+                    array.object(obj -> {
+                        obj.numberType("id");
+                        obj.numberType("userId", 1L);
+                        obj.stringType("product");
+                        obj.numberType("quantity");
+                        obj.decimalType("totalPrice");
+                        obj.stringType("status");
+                    })
+                ).build())
             .toPact();
     }
 
@@ -103,6 +156,51 @@ public class OrderConsumerPactTest {
         assertThat(order.getUserId()).isEqualTo(1L);
         assertThat(order.getProduct()).isEqualTo("Laptop");
         assertThat(order.getStatus()).isEqualTo("PENDING");
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "getOrderNotFoundPact")
+    void testGetOrderNotFound(MockServer mockServer) {
+        OrderClient client = new OrderClient(
+            new RestTemplate(), mockServer.getUrl()
+        );
+
+        assertThatThrownBy(() -> client.getOrderById(999L))
+            .isInstanceOf(HttpClientErrorException.class);
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "getAllOrdersPact")
+    void testGetAllOrders(MockServer mockServer) {
+        OrderClient client = new OrderClient(
+            new RestTemplate(), mockServer.getUrl()
+        );
+
+        List<Order> orders = client.getAllOrders();
+
+        assertThat(orders).isNotNull();
+        assertThat(orders).isNotEmpty();
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "createOrderPact")
+    void testCreateOrder(MockServer mockServer) {
+        OrderClient client = new OrderClient(
+            new RestTemplate(), mockServer.getUrl()
+        );
+
+        Order newOrder = Order.builder()
+            .userId(1L)
+            .product("Laptop")
+            .quantity(1)
+            .totalPrice(2500.00)
+            .build();
+
+        Order created = client.createOrder(newOrder);
+
+        assertThat(created).isNotNull();
+        assertThat(created.getId()).isNotNull();
+        assertThat(created.getStatus()).isEqualTo("PENDING");
     }
 
     @Test

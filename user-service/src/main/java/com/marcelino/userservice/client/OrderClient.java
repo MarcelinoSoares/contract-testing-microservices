@@ -52,4 +52,12 @@ public class OrderClient {
         );
         return response.getBody();
     }
+
+    public Order createOrder(Order order) {
+        return restTemplate.postForObject(
+            orderServiceBaseUrl + "/orders",
+            order,
+            Order.class
+        );
+    }
 }

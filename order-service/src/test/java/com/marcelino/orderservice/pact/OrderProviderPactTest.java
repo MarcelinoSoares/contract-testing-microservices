@@ -1,8 +1,8 @@
 package com.marcelino.orderservice.pact;
 
-import au.com.dius.pact.provider.junit5.HttpTestTarget;
 import au.com.dius.pact.provider.junit5.PactVerificationContext;
 import au.com.dius.pact.provider.junitsupport.Provider;
+import au.com.dius.pact.provider.junitsupport.State;
 import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
 import au.com.dius.pact.provider.spring.junit5.MockMvcTestTarget;
 import au.com.dius.pact.provider.spring.junit5.PactVerificationSpringProvider;
@@ -23,7 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 @WebMvcTest(OrderController.class)
 @Provider("order-service")
-@PactFolder("../../pacts")  // Caminho relativo para o diretorio de contratos
+@PactFolder("../pacts")
 public class OrderProviderPactTest {
 
     @Autowired
@@ -33,6 +33,21 @@ public class OrderProviderPactTest {
     void setup(PactVerificationContext context) {
         context.setTarget(new MockMvcTestTarget(mockMvc));
     }
+
+    @State("order with id 1 exists")
+    void orderWithId1Exists() {}
+
+    @State("order with id 999 does not exist")
+    void orderWithId999DoesNotExist() {}
+
+    @State("orders exist for user 1")
+    void ordersExistForUser1() {}
+
+    @State("orders exist")
+    void ordersExist() {}
+
+    @State("order service is available")
+    void orderServiceIsAvailable() {}
 
     @TestTemplate
     @ExtendWith(PactVerificationSpringProvider.class)

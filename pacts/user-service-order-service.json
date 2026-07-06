@@ -2,45 +2,248 @@
   "consumer": {
     "name": "user-service"
   },
-  "provider": {
-    "name": "order-service"
-  },
   "interactions": [
     {
+      "description": "a request to create an order",
+      "providerStates": [
+        {
+          "name": "order service is available"
+        }
+      ],
+      "request": {
+        "body": {
+          "product": "Laptop",
+          "quantity": 1,
+          "totalPrice": 2500.0,
+          "userId": 1
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.product": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.quantity": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.totalPrice": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "decimal"
+                }
+              ]
+            },
+            "$.userId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/orders"
+      },
+      "response": {
+        "body": {
+          "id": 4,
+          "product": "Laptop",
+          "quantity": 1,
+          "status": "PENDING",
+          "totalPrice": 2500.0,
+          "userId": 1
+        },
+        "headers": {
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.product": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.quantity": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.totalPrice": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "decimal"
+                }
+              ]
+            },
+            "$.userId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      }
+    },
+    {
       "description": "a request for order 1",
-      "providerState": "order with id 1 exists",
+      "providerStates": [
+        {
+          "name": "order with id 1 exists"
+        }
+      ],
       "request": {
         "method": "GET",
         "path": "/orders/1"
       },
       "response": {
-        "status": 200,
-        "headers": {
-          "Content-Type": "application/json"
-        },
         "body": {
           "id": 1,
-          "userId": 1,
           "product": "Laptop",
           "quantity": 1,
-          "totalPrice": 2500.00,
-          "status": "PENDING"
+          "status": "PENDING",
+          "totalPrice": 2500.0,
+          "userId": 1
+        },
+        "headers": {
+          "Content-Type": "application/json; charset=UTF-8"
         },
         "matchingRules": {
           "body": {
-            "$.id": { "matchers": [{ "match": "number" }] },
-            "$.userId": { "matchers": [{ "match": "number" }] },
-            "$.product": { "matchers": [{ "match": "type" }] },
-            "$.quantity": { "matchers": [{ "match": "number" }] },
-            "$.totalPrice": { "matchers": [{ "match": "decimal" }] },
-            "$.status": { "matchers": [{ "match": "type" }] }
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.product": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.quantity": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.totalPrice": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "decimal"
+                }
+              ]
+            },
+            "$.userId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ]
+            }
           }
-        }
+        },
+        "status": 200
       }
     },
     {
       "description": "a request for non-existent order 999",
-      "providerState": "order with id 999 does not exist",
+      "providerStates": [
+        {
+          "name": "order with id 999 does not exist"
+        }
+      ],
       "request": {
         "method": "GET",
         "path": "/orders/999"
@@ -51,45 +254,271 @@
     },
     {
       "description": "a request for all orders from user 1",
-      "providerState": "orders exist for user 1",
+      "providerStates": [
+        {
+          "name": "orders exist for user 1"
+        }
+      ],
       "request": {
         "method": "GET",
         "path": "/orders/user/1"
       },
       "response": {
-        "status": 200,
-        "headers": {
-          "Content-Type": "application/json"
-        },
         "body": [
           {
-            "id": 1,
-            "userId": 1,
-            "product": "Laptop",
-            "quantity": 1,
-            "totalPrice": 2500.00,
-            "status": "PENDING"
+            "id": 100,
+            "product": "string",
+            "quantity": 100,
+            "status": "string",
+            "totalPrice": 100.0,
+            "userId": 1
           }
         ],
+        "generators": {
+          "body": {
+            "$[*].id": {
+              "max": 2147483647,
+              "min": 0,
+              "type": "RandomInt"
+            },
+            "$[*].product": {
+              "size": 20,
+              "type": "RandomString"
+            },
+            "$[*].quantity": {
+              "max": 2147483647,
+              "min": 0,
+              "type": "RandomInt"
+            },
+            "$[*].status": {
+              "size": 20,
+              "type": "RandomString"
+            },
+            "$[*].totalPrice": {
+              "digits": 10,
+              "type": "RandomDecimal"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json; charset=UTF-8"
+        },
         "matchingRules": {
           "body": {
-            "$[0].id": { "matchers": [{ "match": "number" }] },
-            "$[0].userId": { "matchers": [{ "match": "number" }] },
-            "$[0].product": { "matchers": [{ "match": "type" }] },
-            "$[0].quantity": { "matchers": [{ "match": "number" }] },
-            "$[0].totalPrice": { "matchers": [{ "match": "decimal" }] },
-            "$[0].status": { "matchers": [{ "match": "type" }] }
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$[*].product": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].quantity": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$[*].status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].totalPrice": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "decimal"
+                }
+              ]
+            },
+            "$[*].userId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ]
+            }
           }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request for all orders",
+      "providerStates": [
+        {
+          "name": "orders exist"
         }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/orders"
+      },
+      "response": {
+        "body": [
+          {
+            "id": 100,
+            "product": "string",
+            "quantity": 100,
+            "status": "string",
+            "totalPrice": 100.0,
+            "userId": 100
+          }
+        ],
+        "generators": {
+          "body": {
+            "$[*].id": {
+              "max": 2147483647,
+              "min": 0,
+              "type": "RandomInt"
+            },
+            "$[*].product": {
+              "size": 20,
+              "type": "RandomString"
+            },
+            "$[*].quantity": {
+              "max": 2147483647,
+              "min": 0,
+              "type": "RandomInt"
+            },
+            "$[*].status": {
+              "size": 20,
+              "type": "RandomString"
+            },
+            "$[*].totalPrice": {
+              "digits": 10,
+              "type": "RandomDecimal"
+            },
+            "$[*].userId": {
+              "max": 2147483647,
+              "min": 0,
+              "type": "RandomInt"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$[*].product": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].quantity": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$[*].status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].totalPrice": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "decimal"
+                }
+              ]
+            },
+            "$[*].userId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
       }
     }
   ],
   "metadata": {
-    "pactSpecification": {
-      "version": "2.0.0"
-    },
     "pact-jvm": {
       "version": "4.6.5"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
     }
+  },
+  "provider": {
+    "name": "order-service"
   }
 }
