@@ -1,149 +1,235 @@
 # Contract Testing with Microservices
 
 [![CI](https://github.com/MarcelinoSoares/contract-testing-microservices/actions/workflows/ci.yml/badge.svg)](https://github.com/MarcelinoSoares/contract-testing-microservices/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](#cobertura)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](#coverage)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Demonstração de **Consumer-Driven Contract Testing** usando [Pact JVM](https://docs.pact.io/) com microsserviços Java/Spring Boot.
+> Consumer-driven contract testing for Java/Spring Boot microservices using Pact JVM.
 
-## Visão Geral
+This project demonstrates how to validate service integration contracts without relying on fragile end-to-end tests, shared environments, running databases, or full system orchestration.
 
-```
+It includes a consumer service, a provider service, Pact contract generation, provider verification, optional local Pact Broker, JaCoCo coverage gates, and a GitHub Actions pipeline that enforces contract compatibility before merge.
+
+---
+
+## Why this project?
+
+| Problem | Solution |
+| --- | --- |
+| Microservices break because API expectations are implicit | Consumer-driven contracts make expectations executable |
+| End-to-end tests are slow and flaky | Pact verifies service contracts without full environment orchestration |
+| Providers change APIs without noticing consumers | Provider verification fails when contracts are broken |
+| CI does not catch integration risk early | Contract verification runs as an automated quality gate |
+| Coverage drops silently | JaCoCo gates fail the build when coverage thresholds are not met |
+
+---
+
+## Overview
+
+```text
 ┌─────────────────┐         Pact Contract         ┌──────────────────┐
 │   user-service  │  ─────────────────────────►  │  order-service   │
-│   (Consumer)    │  ◄─────────────────────────  │   (Provider)     │
+│   (Consumer)    │                               │   (Provider)     │
 └─────────────────┘                               └──────────────────┘
 ```
 
-O **consumer** define o que espera do provider num arquivo JSON de contrato. O **provider** verifica seu código real contra esse contrato — sem servidor rodando, sem banco, sem testes end-to-end frágeis.
+The consumer defines its expectations for the provider in a Pact JSON contract.
+The provider verifies its real API implementation against that contract.
 
-## Arquitetura
+This approach catches breaking API changes earlier, reduces reliance on brittle E2E tests, and improves release confidence in distributed systems.
 
-```
+---
+
+## Architecture
+
+```text
 contract-testing-microservices/
-├── order-service/              # Provider (Spring Boot REST API)
+├── order-service/              # Provider: Spring Boot REST API
 │   ├── src/main/java/.../
 │   │   ├── controller/OrderController.java
 │   │   └── model/Order.java
 │   ├── src/test/java/.../
 │   │   └── pact/OrderProviderPactTest.java
 │   └── pom.xml
-├── user-service/               # Consumer (consome order-service via HTTP)
+├── user-service/               # Consumer: calls order-service over HTTP
 │   ├── src/main/java/.../
 │   │   ├── client/OrderClient.java
 │   │   └── model/Order.java
 │   ├── src/test/java/.../
 │   │   └── pact/OrderConsumerPactTest.java
 │   └── pom.xml
-├── pacts/                      # Contratos commitados (fonte da verdade para o CI)
-├── .github/workflows/ci.yml    # Pipeline: consumer → provider → cobertura
-└── docker-compose.yml          # Pact Broker local (opcional)
+├── pacts/                      # Versioned Pact contracts used by CI
+├── .github/workflows/ci.yml    # Pipeline: consumer → provider → coverage
+└── docker-compose.yml          # Optional local Pact Broker
 ```
 
-## Contratos Pact
+---
 
-Cinco interações cobrindo toda a API do `order-service`:
+## Contract Scenarios
 
-| Método | Endpoint | Cenário |
-|--------|----------|---------|
-| `GET` | `/orders` | Lista todos os pedidos |
-| `GET` | `/orders/{id}` | Busca pedido por ID (200) |
-| `GET` | `/orders/{id}` | Pedido não encontrado (404) |
-| `GET` | `/orders/user/{userId}` | Pedidos de um usuário |
-| `POST` | `/orders` | Cria um pedido (201) |
+Five Pact interactions cover the `order-service` API:
 
-## Como Executar
+| Method | Endpoint                | Scenario                   |
+| ------ | ----------------------- | -------------------------- |
+| `GET`  | `/orders`               | List all orders            |
+| `GET`  | `/orders/{id}`          | Find order by ID — success |
+| `GET`  | `/orders/{id}`          | Order not found — 404      |
+| `GET`  | `/orders/user/{userId}` | Find orders by user        |
+| `POST` | `/orders`               | Create order — 201         |
 
-### Pré-requisitos
+---
+
+## Quickstart
+
+### Prerequisites
 
 - Java 17+
 - Maven 3.9+
 
-### Testes do consumer (gera os contratos)
+### Run consumer tests and generate contracts
 
 ```bash
 cd user-service
 mvn test -Dtest=OrderConsumerPactTest
 ```
 
-O arquivo `user-service/target/pacts/user-service-order-service.json` é gerado ao final.
+This generates:
 
-### Verificação do provider
+```text
+user-service/target/pacts/user-service-order-service.json
+```
+
+### Verify provider against the generated contract
 
 ```bash
-# Copie o contrato gerado para a pasta compartilhada
 cp user-service/target/pacts/user-service-order-service.json pacts/
 
 cd order-service
 mvn test -Dtest=OrderProviderPactTest
 ```
 
-### Build completo (testes + cobertura + pacote)
+### Run full build with tests, coverage, and packaging
 
 ```bash
-cd user-service && mvn verify
-# Em seguida:
-cd ../order-service && mvn verify
+cd user-service
+mvn verify
+
+cd ../order-service
+mvn verify
 ```
 
-`mvn verify` inclui o gate de cobertura JaCoCo — falha se LINE ou INSTRUCTION cair abaixo de 100%.
+`mvn verify` includes JaCoCo coverage gates. The build fails if line or instruction coverage drops below the configured threshold.
 
-### Pact Broker local (opcional)
+---
+
+## Optional Local Pact Broker
 
 ```bash
 docker-compose up -d
-# Acesse: http://localhost:9292 (usuário/senha: pact_workshop)
 ```
 
-## Cobertura
-
-JaCoCo configurado em ambos os serviços com exclusão das classes `*Application`:
-
-| Serviço       | Linhas | Instruções |
-| ------------- | ------ | ---------- |
-| user-service  | 100%   | 100%       |
-| order-service | 100%   | 100%       |
-
-O gate é aplicado no `mvn verify` — qualquer PR que reduza a cobertura falha o CI antes do merge.
-
-## CI/CD
-
-O pipeline segue a ordem natural do Pact:
+Open:
 
 ```text
-consumer (mvn verify)
-    └─ gera pacts/
-provider (mvn verify)   ← depende do artifact acima
-    └─ verifica contratos
+http://localhost:9292
 ```
 
-Etapas por job:
+Default credentials:
 
-- Compilação, testes, gate de cobertura e empacotamento (`mvn verify`)
-- Upload do contrato gerado como artifact entre jobs
-- Upload dos relatórios JaCoCo HTML (retidos por 7 dias)
-- Upload dos relatórios Surefire em caso de falha
+```text
+pact_workshop / pact_workshop
+```
 
-Triggers: `push` em `main`/`develop`, `pull_request` em `main`/`develop`, e `workflow_dispatch` para execução manual.
+---
 
-## Stack
+## Coverage
 
-| Tecnologia  | Versão                  |
-| ----------- | ----------------------- |
-| Java        | 17 (compatível com 25+) |
-| Spring Boot | 3.2.3                   |
-| Pact JVM    | 4.6.5                   |
-| JaCoCo      | 0.8.15                  |
-| JUnit 5     | 5.x                     |
-| Maven       | 3.9.x                   |
-| Lombok      | 1.18.38                 |
+JaCoCo is configured in both services, excluding `*Application` bootstrap classes.
 
-## Autor
+| Service       | Lines | Instructions |
+| ------------- | ----: | -----------: |
+| user-service  |  100% |         100% |
+| order-service |  100% |         100% |
 
-**Marcelino Soares** — QA Engineer @ Thoughtworks
-- LinkedIn: [marcelinosoares](https://www.linkedin.com/in/marcelinosoares)
-- GitHub: [@MarcelinoSoares](https://github.com/MarcelinoSoares)
+Coverage gates are intentionally strict in this sample project to demonstrate CI quality enforcement.
 
-## Licença
+---
 
-MIT License — veja [LICENSE](LICENSE) para detalhes.
+## CI/CD Pipeline
+
+The GitHub Actions pipeline follows the natural Pact workflow:
+
+```text
+consumer job
+    └── builds user-service
+    └── runs consumer Pact tests
+    └── generates Pact contract
+    └── uploads contract artifact
+
+provider job
+    └── downloads Pact contract artifact
+    └── builds order-service
+    └── verifies provider against contract
+    └── runs coverage gates
+```
+
+Pipeline responsibilities:
+
+- Compile both services
+- Run consumer contract tests
+- Generate Pact contracts
+- Upload generated contracts as CI artifacts
+- Verify provider implementation against consumer expectations
+- Run JaCoCo coverage gates
+- Upload JaCoCo HTML reports
+- Upload Surefire reports on failure
+
+Triggers:
+
+- `push` to `main` or `develop`
+- `pull_request` to `main` or `develop`
+- `workflow_dispatch` for manual runs
+
+---
+
+## Quality Engineering Value
+
+This project demonstrates how contract testing helps engineering teams:
+
+- Detect breaking API changes before deployment
+- Reduce dependence on slow and flaky end-to-end tests
+- Make service expectations explicit and versioned
+- Improve release confidence across microservices
+- Shift integration risk left into CI/CD
+- Strengthen collaboration between consumer and provider teams
+
+---
+
+## Tech Stack
+
+| Technology     | Version              |
+| -------------- | -------------------- |
+| Java           | 17                   |
+| Spring Boot    | 3.2.3                |
+| Pact JVM       | 4.6.5                |
+| JaCoCo         | 0.8.15               |
+| JUnit          | 5.x                  |
+| Maven          | 3.9.x                |
+| Lombok         | 1.18.38              |
+| Docker Compose | Optional Pact Broker |
+
+---
+
+## Author
+
+**Marcelino Soares**
+Senior SDET / Quality Engineer · Contract Testing · Microservices · Test Automation · CI/CD
+
+- [LinkedIn](https://www.linkedin.com/in/marcelinosoares)
+- [GitHub](https://github.com/MarcelinoSoares)
+
+---
+
+## License
+
+MIT License — see [LICENSE](LICENSE) for details.
