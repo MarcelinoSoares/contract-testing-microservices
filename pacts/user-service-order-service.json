@@ -1,0 +1,95 @@
+{
+  "consumer": {
+    "name": "user-service"
+  },
+  "provider": {
+    "name": "order-service"
+  },
+  "interactions": [
+    {
+      "description": "a request for order 1",
+      "providerState": "order with id 1 exists",
+      "request": {
+        "method": "GET",
+        "path": "/orders/1"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "id": 1,
+          "userId": 1,
+          "product": "Laptop",
+          "quantity": 1,
+          "totalPrice": 2500.00,
+          "status": "PENDING"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": { "matchers": [{ "match": "number" }] },
+            "$.userId": { "matchers": [{ "match": "number" }] },
+            "$.product": { "matchers": [{ "match": "type" }] },
+            "$.quantity": { "matchers": [{ "match": "number" }] },
+            "$.totalPrice": { "matchers": [{ "match": "decimal" }] },
+            "$.status": { "matchers": [{ "match": "type" }] }
+          }
+        }
+      }
+    },
+    {
+      "description": "a request for non-existent order 999",
+      "providerState": "order with id 999 does not exist",
+      "request": {
+        "method": "GET",
+        "path": "/orders/999"
+      },
+      "response": {
+        "status": 404
+      }
+    },
+    {
+      "description": "a request for all orders from user 1",
+      "providerState": "orders exist for user 1",
+      "request": {
+        "method": "GET",
+        "path": "/orders/user/1"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": [
+          {
+            "id": 1,
+            "userId": 1,
+            "product": "Laptop",
+            "quantity": 1,
+            "totalPrice": 2500.00,
+            "status": "PENDING"
+          }
+        ],
+        "matchingRules": {
+          "body": {
+            "$[0].id": { "matchers": [{ "match": "number" }] },
+            "$[0].userId": { "matchers": [{ "match": "number" }] },
+            "$[0].product": { "matchers": [{ "match": "type" }] },
+            "$[0].quantity": { "matchers": [{ "match": "number" }] },
+            "$[0].totalPrice": { "matchers": [{ "match": "decimal" }] },
+            "$[0].status": { "matchers": [{ "match": "type" }] }
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "2.0.0"
+    },
+    "pact-jvm": {
+      "version": "4.6.5"
+    }
+  }
+}
