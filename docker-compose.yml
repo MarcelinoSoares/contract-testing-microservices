@@ -1,0 +1,22 @@
+version: '3.8'
+
+# Pact Broker local para gerenciar e compartilhar contratos
+# Acesse: http://localhost:9292
+# Credenciais: pact_workshop / pact_workshop
+
+services:
+  pact-broker:
+    image: pactfoundation/pact-broker:latest
+    ports:
+      - '9292:9292'
+    environment:
+      PACT_BROKER_DATABASE_URL: 'sqlite:////tmp/pact_broker.sqlite3'
+      PACT_BROKER_BASIC_AUTH_USERNAME: 'pact_workshop'
+      PACT_BROKER_BASIC_AUTH_PASSWORD: 'pact_workshop'
+      PACT_BROKER_ALLOW_PUBLIC_READ: 'true'
+    volumes:
+      - pact-broker-data:/tmp
+
+volumes:
+  pact-broker-data:
+    driver: local
