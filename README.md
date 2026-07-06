@@ -203,6 +203,18 @@ This project demonstrates how contract testing helps engineering teams:
 - Shift integration risk left into CI/CD
 - Strengthen collaboration between consumer and provider teams
 
+Contract testing does not replace all E2E tests; it reduces integration risk earlier and reserves E2E coverage for critical user journeys.
+
+---
+
+## Design Decisions
+
+- Consumer-driven contracts make API expectations explicit and versioned.
+- Provider verification runs against the real Spring Boot controller layer, not a mock.
+- Pact contracts are shared through CI artifacts to keep the pipeline reproducible without a Broker.
+- JaCoCo gates are intentionally strict to demonstrate automated quality enforcement in CI.
+- Pact Broker is optional for local exploration; CI uses versioned contracts committed directly to the repo.
+
 ---
 
 ## Tech Stack
