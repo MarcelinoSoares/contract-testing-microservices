@@ -149,6 +149,68 @@
       }
     },
     {
+      "description": "a request to create an order with missing product field",
+      "providerStates": [
+        {
+          "name": "order service rejects invalid payload"
+        }
+      ],
+      "request": {
+        "body": {
+          "quantity": 1,
+          "totalPrice": 2500.0,
+          "userId": 1
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.quantity": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.totalPrice": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "decimal"
+                }
+              ]
+            },
+            "$.userId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/orders"
+      },
+      "response": {
+        "status": 400
+      }
+    },
+    {
       "description": "a request for order 1",
       "providerStates": [
         {
