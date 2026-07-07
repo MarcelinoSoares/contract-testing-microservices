@@ -1,6 +1,7 @@
 package com.marcelino.orderservice.controller;
 
 import com.marcelino.orderservice.model.Order;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,7 +49,7 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<Order> createOrder(@RequestBody Order order) {
+    public ResponseEntity<Order> createOrder(@Valid @RequestBody Order order) {
         order.setId((long) (orders.size() + 1));
         order.setStatus("PENDING");
         return ResponseEntity.status(201).body(order);

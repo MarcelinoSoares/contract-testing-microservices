@@ -138,6 +138,27 @@ public class OrderConsumerPactTest {
             .toPact();
     }
 
+    @Pact(consumer = "user-service", provider = "order-service")
+    public RequestResponsePact createOrderInvalidPayloadPact(PactDslWithProvider builder) {
+        // Order.product is @JsonInclude(NON_NULL), so a null product is omitted from the
+        // serialized body entirely — the provider receives a body with no "product" key,
+        // which fails @NotBlank validation and returns 400.
+        return builder
+            .given("order service rejects invalid payload")
+            .uponReceiving("a request to create an order with missing product field")
+                .path("/orders")
+                .method("POST")
+                .matchHeader("Content-Type", "application/json.*", "application/json")
+                .body(new PactDslJsonBody()
+                    .numberType("userId", 1L)
+                    .numberType("quantity", 1)
+                    .decimalType("totalPrice", 2500.00)
+                )
+            .willRespondWith()
+                .status(400)
+            .toPact();
+    }
+
     // =========================================================
     // TESTES - Verificam o comportamento do OrderClient
     // =========================================================
@@ -215,5 +236,23 @@ public class OrderConsumerPactTest {
         assertThat(orders).isNotNull();
         assertThat(orders).isNotEmpty();
         assertThat(orders.get(0).getUserId()).isEqualTo(1L);
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "createOrderInvalidPayloadPact")
+    void testCreateOrderWithInvalidPayloadReturns400(MockServer mockServer) {
+        OrderClient client = new OrderClient(
+            new RestTemplate(), mockServer.getUrl()
+        );
+
+        Order invalidOrder = Order.builder()
+            .userId(1L)
+            .product(null)
+            .quantity(1)
+            .totalPrice(2500.00)
+            .build();
+
+        assertThatThrownBy(() -> client.createOrder(invalidOrder))
+            .isInstanceOf(HttpClientErrorException.class);
     }
 }

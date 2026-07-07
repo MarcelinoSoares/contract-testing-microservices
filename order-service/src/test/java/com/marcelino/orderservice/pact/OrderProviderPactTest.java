@@ -34,20 +34,41 @@ public class OrderProviderPactTest {
         context.setTarget(new MockMvcTestTarget(mockMvc));
     }
 
+    // Each @State method documents the precondition the consumer declared.
+    // No setup is needed here because OrderController seeds all data in a static
+    // in-memory list at startup (ids 1-3, userIds 1-2). If this ever moves to a
+    // real repository, replace these no-ops with explicit data-fixture calls.
+
     @State("order with id 1 exists")
-    void orderWithId1Exists() {}
+    void orderWithId1Exists() {
+        // Covered by static seed: id=1, userId=1, product="Laptop", status="PENDING"
+    }
 
     @State("order with id 999 does not exist")
-    void orderWithId999DoesNotExist() {}
+    void orderWithId999DoesNotExist() {
+        // Static list only contains ids 1-3, so id=999 will always return 404
+    }
 
     @State("orders exist for user 1")
-    void ordersExistForUser1() {}
+    void ordersExistForUser1() {
+        // Static seed contains two orders for userId=1 (ids 1 and 2)
+    }
 
     @State("orders exist")
-    void ordersExist() {}
+    void ordersExist() {
+        // Static seed always contains 3 orders
+    }
 
     @State("order service is available")
-    void orderServiceIsAvailable() {}
+    void orderServiceIsAvailable() {
+        // No setup required; MockMvcTestTarget initialises the controller directly
+    }
+
+    @State("order service rejects invalid payload")
+    void orderServiceRejectsInvalidPayload() {
+        // No setup required; @Valid on createOrder triggers Spring's constraint
+        // validation before the method body runs, returning 400 automatically
+    }
 
     @TestTemplate
     @ExtendWith(PactVerificationSpringProvider.class)
